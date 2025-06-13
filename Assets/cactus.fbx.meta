@@ -3,7 +3,12 @@ guid: e6d5fd7d6a4ea504699aaa4e3990b9a0
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Saguaro_mat
+    second: {fileID: 2100000, guid: 431d3f3310498c2488a88bac6acf6f84, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
