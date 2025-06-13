@@ -98,53 +98,59 @@ class ControllerActionEventHendler
                 Id = 0;
         }
     }
+    
     public void SaveAll(string myPath)
     {
         if (AllFrames.Count < 1)
             return;
+
         string separator = ";";
         CultureInfo culture = CultureInfo.InvariantCulture;
-        string resultText = "";
+
         lock (AllFrames)
         {
-            StreamWriter file;
-            if(File.Exists(myPath)) file = new StreamWriter(myPath);
-            else
+            try
             {
-                File.Create(myPath);
-                file = new StreamWriter(myPath);
+                using (StreamWriter file = new StreamWriter(myPath, false)) // 'false' to overwrite
+                {
+                    // Header
+                    string resultText = "Id" + separator + "Time" + separator;
+
+                    string[] header = AllFrames[0].caL.GetHeader("L", "");
+                    foreach (var h in header)
+                        resultText += h + separator;
+
+                    header = AllFrames[0].caR.GetHeader("R", "");
+                    foreach (var h in header)
+                        resultText += h + separator;
+
+                    header = AllFrames[0].caR.GetHeader("H", "");
+                    foreach (var h in header)
+                        resultText += h + separator;
+
+                    // Trim trailing separator
+                    resultText = resultText.Substring(0, resultText.Length - separator.Length);
+                    file.WriteLine(resultText);
+
+                    // Data
+                    foreach (var cae in AllFrames)
+                    {
+                        resultText = cae.Id + separator + cae.Time + separator
+                            + cae.caL.ToString(separator, culture) + separator
+                            + cae.caR.ToString(separator, culture) + separator
+                            + cae.caH.ToString(separator, culture);
+
+                        file.WriteLine(resultText);
+                    }
+                }
             }
-            //header
-            resultText = "Id" + separator + "Time" + separator;
-            string []header = AllFrames[0].caL.GetHeader("L","");
-            foreach(var h in header)
+            catch (Exception ex)
             {
-                resultText += h + separator;
+                UnityEngine.Debug.LogError("SaveAll() error: " + ex.Message);
             }
-            header = AllFrames[0].caR.GetHeader("R","");
-            foreach(var h in header)
-            {
-                resultText += h + separator;
-            }
-            header = AllFrames[0].caR.GetHeader("H","");
-            foreach(var h in header)
-            {
-                resultText += h + separator;
-            }
-            resultText = resultText.Substring(0, resultText.Length - separator.Length);
-            file.WriteLine(resultText);
-            //data
-            foreach(var cae in AllFrames)
-            {
-                resultText = cae.Id + separator + cae.Time + separator
-                    + cae.caL.ToString(separator, culture) + separator
-                    + cae.caR.ToString(separator, culture) + separator
-                    + cae.caH.ToString(separator, culture);
-                file.WriteLine(resultText);
-            }
-            file.Close();
         }
     }
+
     public void ClearAll()
     {
         lock (AllFrames)
