@@ -19,6 +19,7 @@ MemoryCaptures/
 *.svd
 *.pdb
 *.mdb
+*.dwlt
 
 # OS – systemowe
 .DS_Store
