@@ -3,7 +3,12 @@ guid: 4d2401ed98c62f545906631a4440d4ed
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: OrganPipeCactus_Mat.002
+    second: {fileID: -6329748817323164069, guid: a9bea26cea6e3a2478b65ced0babe405, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
