@@ -22,10 +22,10 @@ public class GestureModelTester : MonoBehaviour
         float[,] data = LoadAndPreprocessCSV(csvFileName);
 
         // Create tensor (1, 40, 7)
-        Tensor inputTensor = new Tensor(1, 40, 7);
+        Tensor inputTensor = new Tensor(1, 40, 7, 1); // Barracuda expects 4D: N,H,W,C
         for (int t = 0; t < 40; t++)
             for (int f = 0; f < 7; f++)
-                inputTensor[0, t, f] = data[t, f];
+                inputTensor[0, t, f, 0] = data[t, f];
 
         // Run inference
         worker.Execute(inputTensor);
@@ -107,10 +107,14 @@ public class GestureModelTester : MonoBehaviour
                 float v0 = orig[idx], v1 = orig[idx + 1];
                 interp[i] = Mathf.Lerp(v0, v1, (t - t0) / (t1 - t0));
             }
-            if (d == 0) for (int i = 0; i < targetLen; i++) result[i] = new Vector3(interp[i], 0, 0);
-            else for (int i = 0; i < targetLen; i++)
-                if (d == 1) result[i].y = interp[i];
-                else result[i].z = interp[i];
+            for (int i = 0; i < targetLen; i++)
+            {
+                Vector3 temp = result[i];
+                if (d == 0) temp.x = interp[i];
+                else if (d == 1) temp.y = interp[i];
+                else temp.z = interp[i];
+                result[i] = temp;
+            }
         }
         return result;
     }
