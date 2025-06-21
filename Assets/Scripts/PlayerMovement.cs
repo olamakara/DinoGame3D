@@ -12,7 +12,9 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // Move forward automatically
         transform.Translate(Vector3.forward * Time.deltaTime * playerSpeed, Space.World);
+        // Keyboard movement (optional fallback)
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
         {
             if (this.gameObject.transform.position.x > leftLimit)
@@ -24,7 +26,7 @@ public class PlayerMovement : MonoBehaviour
         {
             if (this.gameObject.transform.position.x < rightLimit)
             {
-                transform.Translate(Vector3.left * Time.deltaTime * horizontalSpeed * -1);
+                transform.Translate(Vector3.right * Time.deltaTime * horizontalSpeed);
             }
         }
     }
