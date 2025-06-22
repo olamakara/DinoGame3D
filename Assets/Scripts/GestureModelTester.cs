@@ -9,6 +9,7 @@ public class GestureModelTester : MonoBehaviour
     public NNModel onnxModelAsset; // Assign your .onnx model in the Inspector
     public string csvFileName = "sample_gesture"; // Without .csv, must be in Resources/
     public string expectedLabel = "up"; // Set manually for your test
+    public string[] classLabels = new string[] { "left", "right", "up", "down" }; // Set to your model's output classes
 
     private IWorker worker;
 
@@ -31,9 +32,13 @@ public class GestureModelTester : MonoBehaviour
         worker.Execute(inputTensor);
         Tensor output = worker.PeekOutput();
 
-        // Get predicted class
-        int predicted = ArgMax(output.ToReadOnlyArray());
-        Debug.Log($"Expected label: {expectedLabel}, Predicted class index: {predicted}");
+        // Get predicted class and probability
+        float[] outputArray = output.ToReadOnlyArray();
+        int predicted = ArgMax(outputArray);
+        float confidence = Softmax(outputArray)[predicted];
+        string predictedLabel = (predicted >= 0 && predicted < classLabels.Length) ? classLabels[predicted] : $"class_{predicted}";
+
+        Debug.Log($"Expected label: {expectedLabel}, Predicted: {predictedLabel} (index: {predicted}), Confidence: {confidence:F2}");
 
         // Cleanup
         inputTensor.Dispose();
@@ -150,5 +155,35 @@ public class GestureModelTester : MonoBehaviour
             }
         }
         return maxIdx;
+    }
+
+    float[] Softmax(float[] logits)
+    {
+        float maxLogit = logits.Max();
+        float sumExp = logits.Select(x => Mathf.Exp(x - maxLogit)).Sum();
+        return logits.Select(x => Mathf.Exp(x - maxLogit) / sumExp).ToArray();
+    }
+
+    // Returns the predicted gesture label (e.g., "left", "right", "up", "down")
+    public string GetPredictedGesture()
+    {
+        // Load model
+        var model = ModelLoader.Load(onnxModelAsset);
+        using (var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.Auto, model))
+        {
+            float[,] data = LoadAndPreprocessCSV(csvFileName);
+            Tensor inputTensor = new Tensor(1, 40, 7, 1);
+            for (int t = 0; t < 40; t++)
+                for (int f = 0; f < 7; f++)
+                    inputTensor[0, t, f, 0] = data[t, f];
+            worker.Execute(inputTensor);
+            Tensor output = worker.PeekOutput();
+            float[] outputArray = output.ToReadOnlyArray();
+            int predicted = ArgMax(outputArray);
+            string predictedLabel = (predicted >= 0 && predicted < classLabels.Length) ? classLabels[predicted] : $"class_{predicted}";
+            inputTensor.Dispose();
+            output.Dispose();
+            return predictedLabel;
+        }
     }
 }

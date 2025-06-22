@@ -9,6 +9,7 @@ public class VRDinoBoxController : MonoBehaviour
     public Collider rightBox;
     public Collider upBox;
     public Collider downBox;
+    public GestureModelTester gestureModelTester; // Assign in Inspector
 
     // To avoid repeated triggers, store last state
     private bool wasLeftIn = false;
@@ -33,6 +34,21 @@ public class VRDinoBoxController : MonoBehaviour
         bool downIn = downBox != null && downBox.bounds.Contains(controller.position);
 
         // Only allow one action at a time (priority: jump > bend > left > right)
+        if (gestureModelTester != null)
+        {
+            string gesture = gestureModelTester.GetPredictedGesture();
+            if (gesture == "up" && !wasUpIn && !downIn && !leftIn && !rightIn) dino.Jump();
+            else if (gesture == "down" && !wasDownIn && !upIn && !leftIn && !rightIn) dino.Bend();
+            else if (gesture == "left" && !wasLeftIn && !rightIn && !upIn && !downIn) dino.MoveLeft();
+            else if (gesture == "right" && !wasRightIn && !leftIn && !upIn && !downIn) dino.MoveRight();
+            // Update state tracking for exclusivity
+            wasLeftIn = (gesture == "left");
+            wasRightIn = (gesture == "right");
+            wasUpIn = (gesture == "up");
+            wasDownIn = (gesture == "down");
+            return;
+        }
+        // Fallback to box logic if no gesture is detected
         if (upIn && !wasUpIn && !downIn && !leftIn && !rightIn) {
             dino.Jump();
         } else if (downIn && !wasDownIn && !upIn && !leftIn && !rightIn) {
@@ -42,7 +58,6 @@ public class VRDinoBoxController : MonoBehaviour
         } else if (rightIn && !wasRightIn && !leftIn && !upIn && !downIn) {
             dino.MoveRight();
         }
-
         wasLeftIn = leftIn;
         wasRightIn = rightIn;
         wasUpIn = upIn;
