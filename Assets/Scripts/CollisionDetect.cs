@@ -34,6 +34,7 @@ public class CollisionDetect : MonoBehaviour
         yield return new WaitForSeconds(animLength);
         movementScript.enabled = true;
         anim.Play("dinosaur1_WalkForward");
+        FindObjectOfType<CountScore>()?.StartCounting();
     }
 
     void OnTriggerEnter(Collider other)
@@ -41,5 +42,7 @@ public class CollisionDetect : MonoBehaviour
         crashFX.Play();
         movementScript.enabled = false;
         anim.Play("dinosaur1_Collision");
+
+        FindObjectOfType<CountScore>()?.StopCounting();
     }
 }
