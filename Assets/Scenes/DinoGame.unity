@@ -1449,10 +1449,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec4f7b0f2b7c1c146b4c334bdba9cac6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerSpeed: 10
+  playerSpeed: 5
   horizontalSpeed: 7
   rightLimit: 2.5
   leftLimit: -2.5
+  animator: {fileID: 736620029}
 --- !u!4 &454721921 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4777469181809006, guid: 2bd413b982191d54396bb381188bb4d0, type: 3}
