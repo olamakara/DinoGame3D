@@ -36,6 +36,6 @@ public class CollisionDetect : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         movementScript.enabled = false;
-        anim.Play("dinosaur1_Up");
+        anim.Play("dinosaur1_Collision");
     }
 }

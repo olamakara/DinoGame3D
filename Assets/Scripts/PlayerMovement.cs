@@ -31,14 +31,12 @@ public class PlayerMovement : MonoBehaviour
                 transform.Translate(Vector3.left * Time.deltaTime * horizontalSpeed);
             }
 
-            // Animacja tylko przy wciśnięciu
             if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 animator.SetTrigger("Left");
             }
         }
 
-        // Prawo
         else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
         {
             if (transform.position.x < rightLimit)
@@ -52,10 +50,14 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // Skok
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             animator.SetTrigger("Jump");
+        }
+
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            animator.SetTrigger("Down");
         }
     }
 }
