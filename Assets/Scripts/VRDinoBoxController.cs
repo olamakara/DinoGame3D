@@ -5,80 +5,70 @@ public class VRDinoBoxController : MonoBehaviour
     public PlayerMovement dino;
     public Transform leftController;
     public Transform rightController;
-    public Collider leftBox;
-    public Collider rightBox;
-    public Collider upBox;
-    public Collider downBox;
-    public GestureModelTester gestureModelTester; // Assign in Inspector
+    public Collider neutralBox; // The single neutral zone
+    public GestureModel gestureModel; // Assign your real model in Inspector
 
     // To avoid repeated triggers, store last state
-    private bool wasLeftIn = false;
-    private bool wasRightIn = false;
-    private bool wasUpIn = false;
-    private bool wasDownIn = false;
+    private bool wasInNeutralZoneLeft = true;
+    private bool wasInNeutralZoneRight = true;
+    private bool actionTriggeredLeft = false;
+    private bool actionTriggeredRight = false;
 
     void Update()
     {
         // Check left controller
-        CheckControllerInBox(leftController);
+        CheckControllerInNeutralZone(leftController, ref wasInNeutralZoneLeft, ref actionTriggeredLeft);
         // Check right controller
-        CheckControllerInBox(rightController);
+        CheckControllerInNeutralZone(rightController, ref wasInNeutralZoneRight, ref actionTriggeredRight);
     }
 
-    void CheckControllerInBox(Transform controller)
+    void CheckControllerInNeutralZone(Transform controller, ref bool wasInNeutralZone, ref bool actionTriggered)
     {
-        if (controller == null || dino == null) return;
-        bool leftIn = leftBox != null && leftBox.bounds.Contains(controller.position);
-        bool rightIn = rightBox != null && rightBox.bounds.Contains(controller.position);
-        bool upIn = upBox != null && upBox.bounds.Contains(controller.position);
-        bool downIn = downBox != null && downBox.bounds.Contains(controller.position);
+        if (controller == null || dino == null || neutralBox == null) return;
+        bool inNeutralZone = neutralBox.bounds.Contains(controller.position);
 
-        // Only allow one action at a time (priority: jump > bend > left > right)
-        if (gestureModelTester != null)
+        // If controller just left the neutral zone and no action has been triggered
+        if (!inNeutralZone && wasInNeutralZone && !actionTriggered)
         {
-            string gesture = gestureModelTester.GetPredictedGesture();
-            if (gesture == "up" && !wasUpIn && !downIn && !leftIn && !rightIn) dino.Jump();
-            else if (gesture == "down" && !wasDownIn && !upIn && !leftIn && !rightIn) dino.Bend();
-            else if (gesture == "left" && !wasLeftIn && !rightIn && !upIn && !downIn) dino.MoveLeft();
-            else if (gesture == "right" && !wasRightIn && !leftIn && !upIn && !downIn) dino.MoveRight();
-            // Update state tracking for exclusivity
-            wasLeftIn = (gesture == "left");
-            wasRightIn = (gesture == "right");
-            wasUpIn = (gesture == "up");
-            wasDownIn = (gesture == "down");
-            return;
+            if (gestureModel != null)
+            {
+                string gesture = gestureModel.GetPredictedGesture();
+                if (gesture == "up")
+                {
+                    dino.Jump();
+                    actionTriggered = true;
+                }
+                else if (gesture == "down")
+                {
+                    dino.Bend();
+                    actionTriggered = true;
+                }
+                else if (gesture == "left")
+                {
+                    dino.MoveLeft();
+                    actionTriggered = true;
+                }
+                else if (gesture == "right")
+                {
+                    dino.MoveRight();
+                    actionTriggered = true;
+                }
+            }
         }
-        // Fallback to box logic if no gesture is detected
-        if (upIn && !wasUpIn && !downIn && !leftIn && !rightIn) {
-            dino.Jump();
-        } else if (downIn && !wasDownIn && !upIn && !leftIn && !rightIn) {
-            dino.Bend();
-        } else if (leftIn && !wasLeftIn && !rightIn && !upIn && !downIn) {
-            dino.MoveLeft();
-        } else if (rightIn && !wasRightIn && !leftIn && !upIn && !downIn) {
-            dino.MoveRight();
+        // Reset action trigger when controller returns to neutral zone
+        if (inNeutralZone && !wasInNeutralZone)
+        {
+            actionTriggered = false;
         }
-        wasLeftIn = leftIn;
-        wasRightIn = rightIn;
-        wasUpIn = upIn;
-        wasDownIn = downIn;
+        wasInNeutralZone = inNeutralZone;
     }
 
 #if UNITY_EDITOR
     void OnDrawGizmos()
     {
-        Gizmos.color = new Color(1, 0, 0, 0.3f); // Red for left
-        if (leftBox != null)
-            Gizmos.DrawCube(leftBox.bounds.center, leftBox.bounds.size);
-        Gizmos.color = new Color(0, 1, 0, 0.3f); // Green for right
-        if (rightBox != null)
-            Gizmos.DrawCube(rightBox.bounds.center, rightBox.bounds.size);
-        Gizmos.color = new Color(0, 0, 1, 0.3f); // Blue for up
-        if (upBox != null)
-            Gizmos.DrawCube(upBox.bounds.center, upBox.bounds.size);
-        Gizmos.color = new Color(1, 1, 0, 0.3f); // Yellow for down
-        if (downBox != null)
-            Gizmos.DrawCube(downBox.bounds.center, downBox.bounds.size);
+        Gizmos.color = new Color(0, 1, 1, 0.3f); // Cyan for neutral zone
+        if (neutralBox != null)
+            Gizmos.DrawCube(neutralBox.bounds.center, neutralBox.bounds.size);
     }
 #endif
 }
