@@ -5,6 +5,8 @@ public class CollisionDetect : MonoBehaviour
 {
     [SerializeField] GameObject thePlayer;
     [SerializeField] GameObject playerAnim;
+    [SerializeField] AudioSource crashFX;
+    [SerializeField] AudioSource DinoFX;
 
     private PlayerMovement movementScript;
     private Animator anim;
@@ -15,6 +17,7 @@ public class CollisionDetect : MonoBehaviour
         anim = playerAnim.GetComponent<Animator>();
 
         movementScript.enabled = false;
+        DinoFX.PlayDelayed(1.5f);
         anim.Play("dinosaur1_Start");
         StartCoroutine(WaitForStartAnimationThenMove());
     }
@@ -35,6 +38,7 @@ public class CollisionDetect : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        crashFX.Play();
         movementScript.enabled = false;
         anim.Play("dinosaur1_Collision");
     }
