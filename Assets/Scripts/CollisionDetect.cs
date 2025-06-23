@@ -5,12 +5,12 @@ using UnityEngine;
 public class CollisionDetect : MonoBehaviour
 {
     [SerializeField] GameObject thePlayer;
-    //[SerializeField] GameObject playerAnim;
+    [SerializeField] GameObject playerAnim;
 
     void OnTriggerEnter(Collider other)
     {
         thePlayer.GetComponent<PlayerMovement>().enabled = false;
-        //playerAnim.GetComponent<Animator>().Play("Stumble Backwards");
+        playerAnim.GetComponent<Animator>().Play("dinosaur1_Up");
         
     }
 }
