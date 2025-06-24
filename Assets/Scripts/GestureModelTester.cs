@@ -35,11 +35,14 @@ public class GestureModelTester : MonoBehaviour
         if (!useLiveVRInput)
             return;
 
+        Vector3 posR = Vector3.zero;
+        Vector3 posL = Vector3.zero;
+
         // Pobierz pozycje kontrolerów
         InputDevice deviceRight = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
         InputDevice deviceLeft = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-        bool rightValid = deviceRight.isValid && deviceRight.TryGetFeatureValue(CommonUsages.devicePosition, out Vector3 posR);
-        bool leftValid = deviceLeft.isValid && deviceLeft.TryGetFeatureValue(CommonUsages.devicePosition, out Vector3 posL);
+        bool rightValid = deviceRight.isValid && deviceRight.TryGetFeatureValue(CommonUsages.devicePosition, out posR);
+        bool leftValid = deviceLeft.isValid && deviceLeft.TryGetFeatureValue(CommonUsages.devicePosition, out posL);
         bool rightOut = rightValid && !IsInNeutralBox(posR);
         bool leftOut = leftValid && !IsInNeutralBox(posL);
 
@@ -213,6 +216,42 @@ public class GestureModelTester : MonoBehaviour
         return logits.Select(x => Mathf.Exp(x - maxLogit) / sumExp).ToArray();
     }
 
+    //PRÓBA ZMIAN 
+    private float[,] LoadAndPreprocessCSV(string filePath)
+    {
+        float[,] result = new float[40, 7];
+
+        if (!File.Exists(filePath))
+        {
+            Debug.LogError("Nie znaleziono pliku CSV: " + filePath);
+            return result;
+        }
+
+        var lines = File.ReadAllLines(filePath).Take(40).ToList();
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            var parts = lines[i].Split(',');
+            if (parts.Length >= 7)
+            {
+                for (int j = 0; j < 7; j++)
+                {
+                    if (!float.TryParse(parts[j], out result[i, j]))
+                    {
+                        Debug.LogWarning($"Błąd parsowania CSV [line {i}, col {j}]: '{parts[j]}'");
+                        result[i, j] = 0f;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+
+    //PRÓBA ZMIAN +1
+
+
     // Returns the predicted gesture label (e.g., "left", "right", "up", "down")
     public string GetPredictedGesture()
     {
@@ -220,7 +259,9 @@ public class GestureModelTester : MonoBehaviour
         var model = ModelLoader.Load(onnxModelAsset);
         using (var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.Auto, model))
         {
-            float[,] data = LoadAndPreprocessCSV(csvFileName);
+            //ZMIANA float[,] data = LoadAndPreprocessCSV("sample_gesture.csv");
+            float[,] data = LoadAndPreprocessCSV(@"C:\Users\olivi\DinoGame3D\Assets\Resources\sample_gesture.csv");
+
             Tensor inputTensor = new Tensor(1, 40, 7, 1);
             for (int t = 0; t < 40; t++)
                 for (int f = 0; f < 7; f++)

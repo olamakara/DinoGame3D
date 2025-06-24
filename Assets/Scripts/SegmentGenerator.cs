@@ -28,6 +28,5 @@ public class NewBehaviourScript : MonoBehaviour
         yield return new WaitForSeconds(3);
         creatingSegment = false;
 
-
     }
 }
