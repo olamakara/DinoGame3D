@@ -3,95 +3,144 @@ using Unity.Barracuda;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using UnityEngine.XR;
 
 public class GestureModelTester : MonoBehaviour
 {
     public NNModel onnxModelAsset; // Assign your .onnx model in the Inspector
-    public string csvFileName = "sample_gesture"; // Without .csv, must be in Resources/
-    public string expectedLabel = "up"; // Set manually for your test
     public string[] classLabels = new string[] { "left", "right", "up", "down" }; // Set to your model's output classes
 
-    private IWorker worker;
+    public XRNode trackedNode = XRNode.RightHand; // Możesz zmienić na LeftHand
+    public bool useLiveVRInput = true; // Jeśli true, pobiera dane z kontrolera VR
+
+    // Neutralny box (środek i rozmiar)
+    public Vector3 neutralBoxCenter = new Vector3(0, 1, 0); // ustaw wg pozycji spoczynkowej
+    public Vector3 neutralBoxSize = new Vector3(0.3f, 0.3f, 0.3f); // szerokość, wysokość, głębokość
+    private bool isInNeutral = true;
+    private bool isCollecting = true;
+    private int targetFrames = 40;
+
+    private List<Vector3> livePositionsRight = new List<Vector3>();
+    private List<Quaternion> liveQuaternionsRight = new List<Quaternion>();
+    private List<Vector3> livePositionsLeft = new List<Vector3>();
+    private List<Quaternion> liveQuaternionsLeft = new List<Quaternion>();
 
     void Start()
     {
-        // Load model
-        var model = ModelLoader.Load(onnxModelAsset);
-        worker = WorkerFactory.CreateWorker(WorkerFactory.Type.Auto, model);
-
-        // Load and preprocess CSV
-        float[,] data = LoadAndPreprocessCSV(csvFileName);
-
-        // Create tensor (1, 40, 7)
-        Tensor inputTensor = new Tensor(1, 40, 7, 1); // Barracuda expects 4D: N,H,W,C
-        for (int t = 0; t < 40; t++)
-            for (int f = 0; f < 7; f++)
-                inputTensor[0, t, f, 0] = data[t, f];
-
-        // Run inference
-        worker.Execute(inputTensor);
-        Tensor output = worker.PeekOutput();
-
-        // Get predicted class and probability
-        float[] outputArray = output.ToReadOnlyArray();
-        int predicted = ArgMax(outputArray);
-        float confidence = Softmax(outputArray)[predicted];
-        string predictedLabel = (predicted >= 0 && predicted < classLabels.Length) ? classLabels[predicted] : $"class_{predicted}";
-
-        Debug.Log($"Expected label: {expectedLabel}, Predicted: {predictedLabel} (index: {predicted}), Confidence: {confidence:F2}");
-
-        // Cleanup
-        inputTensor.Dispose();
-        output.Dispose();
-        worker.Dispose();
+        // Niepotrzebna logika testowania offline została usunięta
     }
 
-    float[,] LoadAndPreprocessCSV(string resourceName)
+    void Update()
     {
-        // Load CSV from Resources
-        TextAsset csvAsset = Resources.Load<TextAsset>(resourceName);
-        if (csvAsset == null)
+        if (!useLiveVRInput)
+            return;
+
+        // Pobierz pozycje kontrolerów
+        InputDevice deviceRight = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        InputDevice deviceLeft = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+        bool rightValid = deviceRight.isValid && deviceRight.TryGetFeatureValue(CommonUsages.devicePosition, out Vector3 posR);
+        bool leftValid = deviceLeft.isValid && deviceLeft.TryGetFeatureValue(CommonUsages.devicePosition, out Vector3 posL);
+        bool rightOut = rightValid && !IsInNeutralBox(posR);
+        bool leftOut = leftValid && !IsInNeutralBox(posL);
+
+        // Start zbierania gdy którykolwiek kontroler wyjdzie z boxa
+        if (isInNeutral && (rightOut || leftOut))
         {
-            Debug.LogError("CSV file not found in Resources!");
-            return new float[40, 7];
+            isInNeutral = false;
+            isCollecting = true;
+            livePositionsRight.Clear();
+            liveQuaternionsRight.Clear();
+            livePositionsLeft.Clear();
+            liveQuaternionsLeft.Clear();
         }
 
-        // Parse CSV
-        var lines = csvAsset.text.Split('\n').Where(l => !string.IsNullOrWhiteSpace(l)).ToArray();
-        List<Vector3> positions = new List<Vector3>();
-        List<Quaternion> quaternions = new List<Quaternion>();
-        foreach (var line in lines.Skip(1)) // skip header
+        // Zbieraj próbki tylko jeśli jesteśmy poza boxem
+        if (!isInNeutral && isCollecting)
         {
-            var tokens = line.Split(';');
-            if (tokens.Length < 8) continue;
-            float px = float.Parse(tokens[1]);
-            float py = float.Parse(tokens[2]);
-            float pz = float.Parse(tokens[3]);
-            float qx = float.Parse(tokens[4]);
-            float qy = float.Parse(tokens[5]);
-            float qz = float.Parse(tokens[6]);
-            float qw = float.Parse(tokens[7]);
-            positions.Add(new Vector3(px, py, pz));
-            quaternions.Add(new Quaternion(qx, qy, qz, qw));
+            if (rightValid && deviceRight.TryGetFeatureValue(CommonUsages.deviceRotation, out Quaternion rotR))
+            {
+                livePositionsRight.Add(posR);
+                liveQuaternionsRight.Add(rotR);
+            }
+            if (leftValid && deviceLeft.TryGetFeatureValue(CommonUsages.deviceRotation, out Quaternion rotL))
+            {
+                livePositionsLeft.Add(posL);
+                liveQuaternionsLeft.Add(rotL);
+            }
+            // Po zebraniu 40 próbek z obu rąk uruchom predykcję
+            if (livePositionsRight.Count >= targetFrames && liveQuaternionsRight.Count >= targetFrames &&
+                livePositionsLeft.Count >= targetFrames && liveQuaternionsLeft.Count >= targetFrames)
+            {
+                isCollecting = false;
+                RunLivePredictionBothHands();
+            }
         }
-
-        // Interpolate to 40 steps
-        var interpPos = InterpolatePositions(positions, 40);
-        var interpQuat = InterpolateQuaternions(quaternions, 40);
-
-        // Combine to (40, 7)
-        float[,] result = new float[40, 7];
-        for (int i = 0; i < 40; i++)
+        // Reset do neutralnego po powrocie obu kontrolerów do boxa
+        if (!isInNeutral && IsInNeutralBox(posR) && IsInNeutralBox(posL))
         {
-            result[i, 0] = interpPos[i].x;
-            result[i, 1] = interpPos[i].y;
-            result[i, 2] = interpPos[i].z;
-            result[i, 3] = interpQuat[i].x;
-            result[i, 4] = interpQuat[i].y;
-            result[i, 5] = interpQuat[i].z;
-            result[i, 6] = interpQuat[i].w;
+            isInNeutral = true;
         }
-        return result;
+    }
+
+    bool IsInNeutralBox(Vector3 pos)
+    {
+        Vector3 min = neutralBoxCenter - neutralBoxSize * 0.5f;
+        Vector3 max = neutralBoxCenter + neutralBoxSize * 0.5f;
+        return (pos.x >= min.x && pos.x <= max.x &&
+                pos.y >= min.y && pos.y <= max.y &&
+                pos.z >= min.z && pos.z <= max.z);
+    }
+
+    void RunLivePredictionBothHands()
+    {
+        // Interpolacja do 40 próbek
+        var interpPosR = InterpolatePositions(livePositionsRight, targetFrames);
+        var interpQuatR = InterpolateQuaternions(liveQuaternionsRight, targetFrames);
+        var interpPosL = InterpolatePositions(livePositionsLeft, targetFrames);
+        var interpQuatL = InterpolateQuaternions(liveQuaternionsLeft, targetFrames);
+        float[,] data = new float[targetFrames, 14];
+        for (int i = 0; i < targetFrames; i++)
+        {
+            // Prawa ręka
+            data[i, 0] = interpPosR[i].x;
+            data[i, 1] = interpPosR[i].y;
+            data[i, 2] = interpPosR[i].z;
+            data[i, 3] = interpQuatR[i].x;
+            data[i, 4] = interpQuatR[i].y;
+            data[i, 5] = interpQuatR[i].z;
+            data[i, 6] = interpQuatR[i].w;
+            // Lewa ręka
+            data[i, 7] = interpPosL[i].x;
+            data[i, 8] = interpPosL[i].y;
+            data[i, 9] = interpPosL[i].z;
+            data[i, 10] = interpQuatL[i].x;
+            data[i, 11] = interpQuatL[i].y;
+            data[i, 12] = interpQuatL[i].z;
+            data[i, 13] = interpQuatL[i].w;
+        }
+        var model = ModelLoader.Load(onnxModelAsset); // lub saved_model jeśli to NNModel
+        using (var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.Auto, model))
+        {
+            Tensor inputTensor = new Tensor(1, targetFrames, 14, 1); // (N, H, W, C)
+            for (int t = 0; t < targetFrames; t++)
+                for (int f = 0; f < 14; f++)
+                    inputTensor[0, t, f, 0] = data[t, f];
+            worker.Execute(inputTensor);
+            Tensor output = worker.PeekOutput();
+            float[] outputArray = output.ToReadOnlyArray();
+            int predicted = ArgMax(outputArray);
+            float confidence = Softmax(outputArray)[predicted];
+            string predictedLabel = (predicted >= 0 && predicted < classLabels.Length) ? classLabels[predicted] : $"class_{predicted}";
+            Debug.Log($"[LIVE BOTH HANDS] Predicted: {predictedLabel} (index: {predicted}), Confidence: {confidence:F2}");
+            inputTensor.Dispose();
+            output.Dispose();
+            OnGesturePredicted(predictedLabel);
+        }
+        // Reset do kolejnego gestu
+        livePositionsRight.Clear();
+        liveQuaternionsRight.Clear();
+        livePositionsLeft.Clear();
+        liveQuaternionsLeft.Clear();
     }
 
     List<Vector3> InterpolatePositions(List<Vector3> input, int targetLen)
@@ -184,6 +233,33 @@ public class GestureModelTester : MonoBehaviour
             inputTensor.Dispose();
             output.Dispose();
             return predictedLabel;
+        }
+    }
+
+    // Wywoływana po rozpoznaniu gestu, tu podłącz logikę ruchu
+    protected virtual void OnGesturePredicted(string predictedLabel)
+    {
+        Debug.Log($"[ACTION] Wykonaj ruch: {predictedLabel}");
+        // Zakładamy, że w projekcie są już metody do sterowania dinozaurem,
+        // np. MoveLeft(), MoveRight(), MoveUp(), MoveDown() lub podobne.
+        // Wywołujemy odpowiednią metodę na podstawie predictedLabel:
+        switch (predictedLabel)
+        {
+            case "left":
+                SendMessage("MoveLeft", SendMessageOptions.DontRequireReceiver);
+                break;
+            case "right":
+                SendMessage("MoveRight", SendMessageOptions.DontRequireReceiver);
+                break;
+            case "up":
+                SendMessage("MoveUp", SendMessageOptions.DontRequireReceiver);
+                break;
+            case "down":
+                SendMessage("MoveDown", SendMessageOptions.DontRequireReceiver);
+                break;
+            default:
+                Debug.LogWarning($"[DINO] Nieznany ruch: {predictedLabel}");
+                break;
         }
     }
 }
