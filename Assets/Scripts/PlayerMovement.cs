@@ -9,7 +9,7 @@ public class PlayerMovement : MonoBehaviour
     public float leftLimit = -2.5f;
     public Animator animator; // Assign in Inspector
 
-    [SerializeField] private Animator animator;
+    //[SerializeField] private Animator animator;
 
     void Start()
     {

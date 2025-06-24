@@ -516,6 +516,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4777469181809006, guid: 2bd413b982191d54396bb381188bb4d0, type: 3}
   m_PrefabInstance: {fileID: 93462219}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &95066860
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 95066861}
+  m_Layer: 0
+  m_Name: LeftHandAnchorDetached
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &95066861
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 95066860}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1073991088}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &111206641 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f4c1d190feb841549bef574ad7123716, type: 3}
@@ -542,25 +573,9 @@ MonoBehaviour:
   playerAnim: {fileID: 0}
   crashFX: {fileID: 0}
   DinoFX: {fileID: 0}
---- !u!1 &95066860
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 95066861}
-  m_Layer: 0
-  m_Name: LeftHandAnchorDetached
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!65 &111206646
 BoxCollider:
- m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -579,31 +594,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5.635565, y: 1.8685803, z: 5.5565443}
   m_Center: {x: -0.08087301, y: 0.87625456, z: 0.091676354}
---- !u!4 &95066861
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 95066860}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1073991088}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &117154382 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4619486662236612, guid: e05ee61d6dad0e54eb51d1c8ec3becc6, type: 3}
-  m_PrefabInstance: {fileID: 1590166730}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &132445135 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b17540247c78f9f49a54047f5a03d239, type: 3}
-  m_PrefabInstance: {fileID: 153654689}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &112808868
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -675,6 +665,21 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e6d5fd7d6a4ea504699aaa4e3990b9a0, type: 3}
+--- !u!4 &112808869 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: e6d5fd7d6a4ea504699aaa4e3990b9a0, type: 3}
+  m_PrefabInstance: {fileID: 112808868}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &117154382 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4619486662236612, guid: e05ee61d6dad0e54eb51d1c8ec3becc6, type: 3}
+  m_PrefabInstance: {fileID: 1590166730}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &132445135 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b17540247c78f9f49a54047f5a03d239, type: 3}
+  m_PrefabInstance: {fileID: 153654689}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &153654689
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -774,16 +779,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b17540247c78f9f49a54047f5a03d239, type: 3}
---- !u!4 &112808869 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: e6d5fd7d6a4ea504699aaa4e3990b9a0, type: 3}
-  m_PrefabInstance: {fileID: 112808868}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &117154382 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4619486662236612, guid: e05ee61d6dad0e54eb51d1c8ec3becc6, type: 3}
-  m_PrefabInstance: {fileID: 1590166730}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &155047323
 GameObject:
   m_ObjectHideFlags: 0
@@ -1931,23 +1926,6 @@ MonoBehaviour:
   rightLimit: 2.5
   leftLimit: -2.5
   animator: {fileID: 736620029}
---- !u!114 &448299727
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 448299725}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ec4f7b0f2b7c1c146b4c334bdba9cac6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerSpeed: 3
-  horizontalSpeed: 3
-  rightLimit: 2.5
-  leftLimit: -2.5
-  animator: {fileID: 0}
 --- !u!4 &454721921 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4777469181809006, guid: 2bd413b982191d54396bb381188bb4d0, type: 3}
@@ -1979,23 +1957,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.06665182, y: 0.07800092, z: 0.20424436}
   m_Center: {x: -0.007214537, y: -0.006251209, z: 0.10212218}
---- !u!1 &499172981
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 499172983}
-  - component: {fileID: 499172982}
-  m_Layer: 0
-  m_Name: GestureManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!114 &475546431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2012,26 +1973,6 @@ MonoBehaviour:
   playerAnim: {fileID: 0}
   crashFX: {fileID: 0}
   DinoFX: {fileID: 0}
---- !u!114 &499172982
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 499172981}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0e27310012330cd4c961c3c39f546f52, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  dino: {fileID: 448299727}
-  leftController: {fileID: 1750403582}
-  rightController: {fileID: 978266492}
-  leftBox: {fileID: 1094412189}
-  rightBox: {fileID: 1515446734}
-  upBox: {fileID: 445190538}
-  downBox: {fileID: 1506731828}
-  gestureModelTester: {fileID: 0}
 --- !u!1 &486677339 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6027136008259318812, guid: 4d2401ed98c62f545906631a4440d4ed, type: 3}
@@ -2074,6 +2015,55 @@ MonoBehaviour:
   playerAnim: {fileID: 0}
   crashFX: {fileID: 0}
   DinoFX: {fileID: 0}
+--- !u!1 &499172981
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 499172983}
+  - component: {fileID: 499172982}
+  m_Layer: 0
+  m_Name: GestureManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &499172982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 499172981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e27310012330cd4c961c3c39f546f52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dino: {fileID: 0}
+  leftController: {fileID: 1750403582}
+  rightController: {fileID: 978266492}
+  neutralBox: {fileID: 0}
+  gestureModel: {fileID: 0}
+--- !u!4 &499172983
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 499172981}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &511012669 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6027136008259318812, guid: 7152bd9bfb6e2614a93c835c72e99d1c, type: 3}
@@ -2116,21 +2106,6 @@ MonoBehaviour:
   playerAnim: {fileID: 0}
   crashFX: {fileID: 0}
   DinoFX: {fileID: 0}
---- !u!4 &499172983
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 499172981}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &548874728 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4777469181809006, guid: 2bd413b982191d54396bb381188bb4d0, type: 3}
@@ -2189,6 +2164,7 @@ Transform:
   - {fileID: 32088529}
   - {fileID: 1575214160}
   - {fileID: 1812343434}
+  - {fileID: 112808869}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &607831924
@@ -2829,11 +2805,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!4 &741128540 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4925868257544670, guid: fd4804b84d34a784ea6831ede116af4c, type: 3}
-  m_PrefabInstance: {fileID: 716028757}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &752303427
 GameObject:
   m_ObjectHideFlags: 0
@@ -4652,32 +4623,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4925868257544670, guid: fd4804b84d34a784ea6831ede116af4c, type: 3}
   m_PrefabInstance: {fileID: 279243657}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1163518065 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9452ace81bbfd944ba9b66e69681de13, type: 3}
-  m_PrefabInstance: {fileID: 710866961}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1163518066 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9452ace81bbfd944ba9b66e69681de13, type: 3}
-  m_PrefabInstance: {fileID: 710866961}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1163518068
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1163518065}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f449274b4a3892c4187aada894f64b3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  thePlayer: {fileID: 448299725}
-  playerAnim: {fileID: 0}
-  crashFX: {fileID: 0}
-  DinoFX: {fileID: 0}
 --- !u!1 &1155277408
 GameObject:
   m_ObjectHideFlags: 0
@@ -4709,6 +4654,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 443343330}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1163518065 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9452ace81bbfd944ba9b66e69681de13, type: 3}
+  m_PrefabInstance: {fileID: 710866961}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1163518066 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9452ace81bbfd944ba9b66e69681de13, type: 3}
+  m_PrefabInstance: {fileID: 710866961}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1163518068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1163518065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f449274b4a3892c4187aada894f64b3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  thePlayer: {fileID: 448299725}
+  playerAnim: {fileID: 0}
+  crashFX: {fileID: 0}
+  DinoFX: {fileID: 0}
 --- !u!1 &1170516355 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: e6d5fd7d6a4ea504699aaa4e3990b9a0, type: 3}
@@ -4804,8 +4775,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   thePlayer: {fileID: 448299725}
   playerAnim: {fileID: 0}
-  crashFX: {fileID: 0}
-  DinoFX: {fileID: 0}
+  crashFX: {fileID: 1200009157}
+  DinoFX: {fileID: 1722545063}
 --- !u!1001 &1172391922
 PrefabInstance:
   m_ObjectHideFlags: 0
