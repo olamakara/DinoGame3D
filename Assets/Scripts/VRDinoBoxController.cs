@@ -6,7 +6,7 @@ public class VRDinoBoxController : MonoBehaviour
     public Transform leftController;
     public Transform rightController;
     public Collider neutralBox; // The single neutral zone
-    public GestureModel gestureModel; // Assign your real model in Inspector
+    public GestureModelTester gestureModel; // Assign your real model in Inspector
 
     // To avoid repeated triggers, store last state
     private bool wasInNeutralZoneLeft = true;
