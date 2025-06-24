@@ -1,17 +1,18 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class IntoCameraRotate : MonoBehaviour
 {
-    public Transform target;                // Dinozaur
-    public Animator dinoAnimator;           // Animator dinozaura
+    public Transform target;               
+    public Animator dinoAnimator;           
 
     [Header("Intro Rotation")]
-    public float rotationSpeed = 35f;       // Szybkość pierwszego obrotu
-    public float rotationDuration = 4f;     // Czas trwania pierwszego obrotu
+    public float rotationSpeed = 35f;      
+    public float rotationDuration = 4f;    
 
     [Header("Collision Rotation")]
-    public float collisionRotationSpeed = 50f;        // Szybkość drugiego obrotu
-    public float collisionRotationDuration = 5f;      // Czas trwania drugiego obrotu
+    public float collisionRotationSpeed = 50f;      
+    public float collisionRotationDuration = 5f;    
 
     private float introElapsed = 0f;
     private bool isIntroRotating = true;
@@ -22,7 +23,6 @@ public class IntoCameraRotate : MonoBehaviour
 
     void Update()
     {
-        // 🔄 Faza 1 – Intro
         if (isIntroRotating)
         {
             introElapsed += Time.deltaTime;
@@ -34,7 +34,6 @@ public class IntoCameraRotate : MonoBehaviour
             }
         }
 
-        // ⏱️ Sprawdzenie czy animacja kolizji się zaczęła
         if (!hasCollisionRotationStarted && IsInCollisionAnimation())
         {
             hasCollisionRotationStarted = true;
@@ -42,7 +41,7 @@ public class IntoCameraRotate : MonoBehaviour
             collisionElapsed = 0f;
         }
 
-        // 🔄 Faza 2 – Obrót przy kolizji
+
         if (isCollisionRotating)
         {
             collisionElapsed += Time.deltaTime;
@@ -51,7 +50,11 @@ public class IntoCameraRotate : MonoBehaviour
             if (collisionElapsed >= collisionRotationDuration)
             {
                 isCollisionRotating = false;
+                SceneManager.LoadScene(0);
             }
+
+    
+            
         }
     }
 
