@@ -4,7 +4,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     public float playerSpeed = 5;
-    public float horizontalSpeed = 7;
+    public float horizontalSpeed = 15;
     public float rightLimit = 2.5f;
     public float leftLimit = -2.5f;
     public Animator animator; // Assign in Inspector
@@ -32,7 +32,7 @@ public class PlayerMovement : MonoBehaviour
         {
             if (transform.position.x > leftLimit)
             {
-                transform.Translate(Vector3.left * Time.deltaTime * horizontalSpeed);
+                transform.Translate(Vector3.left * Time.deltaTime * horizontalSpeed, Space.World);
             }
 
             if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
@@ -45,7 +45,7 @@ public class PlayerMovement : MonoBehaviour
         {
             if (transform.position.x < rightLimit)
             {
-                transform.Translate(Vector3.right * Time.deltaTime * horizontalSpeed);
+                transform.Translate(Vector3.right * Time.deltaTime * horizontalSpeed, Space.World);
             }
 
             if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
@@ -68,13 +68,25 @@ public class PlayerMovement : MonoBehaviour
     public void MoveLeft()
     {
         if (transform.position.x > leftLimit)
-            transform.Translate(Vector3.left * Time.deltaTime * horizontalSpeed);
+            transform.Translate(Vector3.left * Time.deltaTime * horizontalSpeed, Space.World);
+        // Vector3 newPos = transform.position + Vector3.left * 1.5f;
+        // if (newPos.x >= leftLimit)
+        // {
+        //     transform.position = newPos;
+        // }
+        animator.SetTrigger("Left");
     }
 
     public void MoveRight()
     {
         if (transform.position.x < rightLimit)
-            transform.Translate(Vector3.right * Time.deltaTime * horizontalSpeed);
+            transform.Translate(Vector3.right * Time.deltaTime * horizontalSpeed, Space.World);
+        // Vector3 newPos = transform.position + Vector3.right * 1.5f;
+        // if (newPos.x <= rightLimit)
+        // {
+        //     transform.position = newPos;
+        // }
+        animator.SetTrigger("Right");
     }
 
     public void Jump()

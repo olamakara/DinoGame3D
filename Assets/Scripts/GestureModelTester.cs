@@ -1,169 +1,197 @@
 using UnityEngine;
 using Unity.Barracuda;
-using System.IO;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.XR;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System;
 
 public class GestureModelTester : MonoBehaviour
 {
-    public NNModel onnxModelAsset; // Assign your .onnx model in the Inspector
-    public string[] classLabels = new string[] { "left", "right", "up", "down" }; // Set to your model's output classes
+    public NNModel onnxModelAsset;
+    public string[] classLabels = new string[] { "up", "down", "left", "right" };
 
-    public XRNode trackedNode = XRNode.RightHand; // Możesz zmienić na LeftHand
-    public bool useLiveVRInput = true; // Jeśli true, pobiera dane z kontrolera VR
+    public XRNode trackedNode = XRNode.RightHand;
+    public float triggerThreshold = 0.1f;
+    public int targetFrames = 40;
 
-    // Neutralny box (środek i rozmiar)
-    public Vector3 neutralBoxCenter = new Vector3(0, 1, 0); // ustaw wg pozycji spoczynkowej
-    public Vector3 neutralBoxSize = new Vector3(0.3f, 0.3f, 0.3f); // szerokość, wysokość, głębokość
-    private bool isInNeutral = true;
-    private bool isCollecting = true;
-    private int targetFrames = 40;
+    private bool isRecording = false;
+    private bool wasTriggerPressed = false;
+    private int frameId = 0;
 
-    private List<Vector3> livePositionsRight = new List<Vector3>();
-    private List<Quaternion> liveQuaternionsRight = new List<Quaternion>();
-    private List<Vector3> livePositionsLeft = new List<Vector3>();
-    private List<Quaternion> liveQuaternionsLeft = new List<Quaternion>();
+    // Now we record full "frames" with extra data
+    private List<GestureFrame> recordingFrames = new List<GestureFrame>();
 
-    void Start()
-    {
-        // Niepotrzebna logika testowania offline została usunięta
-    }
+    public GameObject dino;
 
     void Update()
     {
-        if (!useLiveVRInput)
+        InputDevice device = InputDevices.GetDeviceAtXRNode(trackedNode);
+        if (!device.isValid) return;
+
+        bool triggerPressed = device.TryGetFeatureValue(CommonUsages.trigger, out float triggerValue) && triggerValue > triggerThreshold;
+
+        if (triggerPressed && !wasTriggerPressed)
+        {
+            StartRecording();
+        }
+        else if (!triggerPressed && wasTriggerPressed)
+        {
+            StopRecordingAndPredict();
+        }
+
+        if (isRecording)
+        {
+            if (device.TryGetFeatureValue(CommonUsages.devicePosition, out Vector3 position) &&
+                device.TryGetFeatureValue(CommonUsages.deviceRotation, out Quaternion rotation))
+            {
+                // Get button states
+                bool primaryButton = device.TryGetFeatureValue(CommonUsages.primaryButton, out bool pb) && pb;
+                bool secondaryButton = device.TryGetFeatureValue(CommonUsages.secondaryButton, out bool sb) && sb;
+                bool gripButton = device.TryGetFeatureValue(CommonUsages.gripButton, out bool gb) && gb;
+                bool triggerButton = triggerPressed;
+
+                GestureFrame frame = new GestureFrame
+                {
+                    Id = frameId++,
+                    Time = Time.time,
+                    Position = position,
+                    Rotation = rotation,
+                    PrimaryButton = primaryButton,
+                    SecondaryButton = secondaryButton,
+                    GripButton = gripButton,
+                    TriggerButton = triggerButton
+                };
+                recordingFrames.Add(frame);
+            }
+        }
+
+        wasTriggerPressed = triggerPressed;
+    }
+
+    void StartRecording()
+    {
+        recordingFrames.Clear();
+        frameId = 0;
+        isRecording = true;
+        Debug.Log("[GESTURE] Start recording...");
+    }
+
+    void StopRecordingAndPredict()
+    {
+        isRecording = false;
+        Debug.Log("[GESTURE] Stop recording. Predicting...");
+
+        if (recordingFrames.Count < 5)
+        {
+            Debug.LogWarning("[GESTURE] Too few frames to predict.");
             return;
-
-        Vector3 posR = Vector3.zero;
-        Vector3 posL = Vector3.zero;
-
-        // Pobierz pozycje kontrolerów
-        InputDevice deviceRight = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-        InputDevice deviceLeft = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-        bool rightValid = deviceRight.isValid && deviceRight.TryGetFeatureValue(CommonUsages.devicePosition, out posR);
-        bool leftValid = deviceLeft.isValid && deviceLeft.TryGetFeatureValue(CommonUsages.devicePosition, out posL);
-        bool rightOut = rightValid && !IsInNeutralBox(posR);
-        bool leftOut = leftValid && !IsInNeutralBox(posL);
-
-        // Start zbierania gdy którykolwiek kontroler wyjdzie z boxa
-        if (isInNeutral && (rightOut || leftOut))
-        {
-            isInNeutral = false;
-            isCollecting = true;
-            livePositionsRight.Clear();
-            liveQuaternionsRight.Clear();
-            livePositionsLeft.Clear();
-            liveQuaternionsLeft.Clear();
         }
 
-        // Zbieraj próbki tylko jeśli jesteśmy poza boxem
-        if (!isInNeutral && isCollecting)
-        {
-            if (rightValid && deviceRight.TryGetFeatureValue(CommonUsages.deviceRotation, out Quaternion rotR))
-            {
-                livePositionsRight.Add(posR);
-                liveQuaternionsRight.Add(rotR);
-            }
-            if (leftValid && deviceLeft.TryGetFeatureValue(CommonUsages.deviceRotation, out Quaternion rotL))
-            {
-                livePositionsLeft.Add(posL);
-                liveQuaternionsLeft.Add(rotL);
-            }
-            // Po zebraniu 40 próbek z obu rąk uruchom predykcję
-            if (livePositionsRight.Count >= targetFrames && liveQuaternionsRight.Count >= targetFrames &&
-                livePositionsLeft.Count >= targetFrames && liveQuaternionsLeft.Count >= targetFrames)
-            {
-                isCollecting = false;
-                RunLivePredictionBothHands();
-            }
-        }
-        // Reset do neutralnego po powrocie obu kontrolerów do boxa
-        if (!isInNeutral && IsInNeutralBox(posR) && IsInNeutralBox(posL))
-        {
-            isInNeutral = true;
-        }
-    }
+        // Interpolujemy dane do targetFrames długości
+        var interpFrames = InterpolateFrames(recordingFrames, targetFrames);
 
-    bool IsInNeutralBox(Vector3 pos)
-    {
-        Vector3 min = neutralBoxCenter - neutralBoxSize * 0.5f;
-        Vector3 max = neutralBoxCenter + neutralBoxSize * 0.5f;
-        return (pos.x >= min.x && pos.x <= max.x &&
-                pos.y >= min.y && pos.y <= max.y &&
-                pos.z >= min.z && pos.z <= max.z);
-    }
-
-    void RunLivePredictionBothHands()
-    {
-        // Interpolacja do 40 próbek
-        var interpPosR = InterpolatePositions(livePositionsRight, targetFrames);
-        var interpQuatR = InterpolateQuaternions(liveQuaternionsRight, targetFrames);
-        var interpPosL = InterpolatePositions(livePositionsLeft, targetFrames);
-        var interpQuatL = InterpolateQuaternions(liveQuaternionsLeft, targetFrames);
-        float[,] data = new float[targetFrames, 14];
+        // Przygotuj tensor do modelu: na przykład 7 floatów: pos(3), rot(4)
+        float[,] data = new float[targetFrames, 7];
         for (int i = 0; i < targetFrames; i++)
         {
-            // Prawa ręka
-            data[i, 0] = interpPosR[i].x;
-            data[i, 1] = interpPosR[i].y;
-            data[i, 2] = interpPosR[i].z;
-            data[i, 3] = interpQuatR[i].x;
-            data[i, 4] = interpQuatR[i].y;
-            data[i, 5] = interpQuatR[i].z;
-            data[i, 6] = interpQuatR[i].w;
-            // Lewa ręka
-            data[i, 7] = interpPosL[i].x;
-            data[i, 8] = interpPosL[i].y;
-            data[i, 9] = interpPosL[i].z;
-            data[i, 10] = interpQuatL[i].x;
-            data[i, 11] = interpQuatL[i].y;
-            data[i, 12] = interpQuatL[i].z;
-            data[i, 13] = interpQuatL[i].w;
+            data[i, 0] = interpFrames[i].Position.x;
+            data[i, 1] = interpFrames[i].Position.y;
+            data[i, 2] = interpFrames[i].Position.z;
+            data[i, 3] = interpFrames[i].Rotation.x;
+            data[i, 4] = interpFrames[i].Rotation.y;
+            data[i, 5] = interpFrames[i].Rotation.z;
+            data[i, 6] = interpFrames[i].Rotation.w;
         }
-        var model = ModelLoader.Load(onnxModelAsset); // lub saved_model jeśli to NNModel
+
+        var model = ModelLoader.Load(onnxModelAsset);
         using (var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.Auto, model))
         {
-            Tensor inputTensor = new Tensor(1, targetFrames, 14, 1); // (N, H, W, C)
+            Tensor inputTensor = new Tensor(1, targetFrames, 7, 1);
             for (int t = 0; t < targetFrames; t++)
-                for (int f = 0; f < 14; f++)
+                for (int f = 0; f < 7; f++)
                     inputTensor[0, t, f, 0] = data[t, f];
+
             worker.Execute(inputTensor);
             Tensor output = worker.PeekOutput();
             float[] outputArray = output.ToReadOnlyArray();
             int predicted = ArgMax(outputArray);
+            string label = (predicted >= 0 && predicted < classLabels.Length) ? classLabels[predicted] : $"class_{predicted}";
             float confidence = Softmax(outputArray)[predicted];
-            string predictedLabel = (predicted >= 0 && predicted < classLabels.Length) ? classLabels[predicted] : $"class_{predicted}";
-            Debug.Log($"[LIVE BOTH HANDS] Predicted: {predictedLabel} (index: {predicted}), Confidence: {confidence:F2}");
+
+            Debug.Log($"[PREDICTION] Gesture: {label}, Confidence: {confidence:F2}");
+
             inputTensor.Dispose();
             output.Dispose();
-            OnGesturePredicted(predictedLabel);
+
+            OnGesturePredicted(label);
         }
-        // Reset do kolejnego gestu
-        livePositionsRight.Clear();
-        liveQuaternionsRight.Clear();
-        livePositionsLeft.Clear();
-        liveQuaternionsLeft.Clear();
+    }
+
+    List<GestureFrame> InterpolateFrames(List<GestureFrame> input, int targetLen)
+    {
+        List<GestureFrame> result = new List<GestureFrame>(new GestureFrame[targetLen]);
+
+        // Interpolujemy pozycje
+        List<Vector3> positions = input.Select(f => f.Position).ToList();
+        var interpPos = InterpolatePositions(positions, targetLen);
+
+        // Interpolujemy rotacje
+        List<Quaternion> rotations = input.Select(f => f.Rotation).ToList();
+        var interpRot = InterpolateQuaternions(rotations, targetLen);
+
+        // Interpolujemy stany przycisków (binary) - np. bierzemy najbliższy lub majority vote
+        bool[] primaries = input.Select(f => f.PrimaryButton).ToArray();
+        bool[] secondaries = input.Select(f => f.SecondaryButton).ToArray();
+        bool[] grips = input.Select(f => f.GripButton).ToArray();
+        bool[] triggers = input.Select(f => f.TriggerButton).ToArray();
+
+        // Najprostsze podejście: bierzemy stan z najbliższego klatki (bez interpolacji)
+        float[] tOrig = Enumerable.Range(0, input.Count).Select(i => (float)i / (input.Count - 1)).ToArray();
+        float[] tNew = Enumerable.Range(0, targetLen).Select(i => (float)i / (targetLen - 1)).ToArray();
+
+        for (int i = 0; i < targetLen; i++)
+        {
+            int idx = Array.FindLastIndex(tOrig, x => x <= tNew[i]);
+            if (idx >= primaries.Length) idx = primaries.Length - 1;
+
+            result[i] = new GestureFrame
+            {
+                Position = interpPos[i],
+                Rotation = interpRot[i],
+                PrimaryButton = primaries[idx],
+                SecondaryButton = secondaries[idx],
+                GripButton = grips[idx],
+                TriggerButton = triggers[idx]
+            };
+        }
+        return result;
     }
 
     List<Vector3> InterpolatePositions(List<Vector3> input, int targetLen)
     {
+        // Twoja implementacja interpolacji pozycji, możesz skopiować z oryginału
         List<Vector3> result = new List<Vector3>(new Vector3[targetLen]);
         float[] tOrig = Enumerable.Range(0, input.Count).Select(i => (float)i / (input.Count - 1)).ToArray();
         float[] tNew = Enumerable.Range(0, targetLen).Select(i => (float)i / (targetLen - 1)).ToArray();
+
         for (int d = 0; d < 3; d++)
         {
             float[] orig = input.Select(v => d == 0 ? v.x : d == 1 ? v.y : v.z).ToArray();
             float[] interp = new float[targetLen];
+
             for (int i = 0; i < targetLen; i++)
             {
                 float t = tNew[i];
-                int idx = System.Array.FindLastIndex(tOrig, x => x <= t);
-                if (idx == tOrig.Length - 1) idx--;
+                int idx = Array.FindLastIndex(tOrig, x => x <= t);
+                if (idx >= tOrig.Length - 1) idx = tOrig.Length - 2;
+
                 float t0 = tOrig[idx], t1 = tOrig[idx + 1];
                 float v0 = orig[idx], v1 = orig[idx + 1];
                 interp[i] = Mathf.Lerp(v0, v1, (t - t0) / (t1 - t0));
             }
+
             for (int i = 0; i < targetLen; i++)
             {
                 Vector3 temp = result[i];
@@ -173,134 +201,78 @@ public class GestureModelTester : MonoBehaviour
                 result[i] = temp;
             }
         }
+
         return result;
     }
 
     List<Quaternion> InterpolateQuaternions(List<Quaternion> input, int targetLen)
     {
+        // Twoja implementacja interpolacji rotacji, możesz skopiować z oryginału
         List<Quaternion> result = new List<Quaternion>();
         float[] tOrig = Enumerable.Range(0, input.Count).Select(i => (float)i / (input.Count - 1)).ToArray();
         float[] tNew = Enumerable.Range(0, targetLen).Select(i => (float)i / (targetLen - 1)).ToArray();
+
         for (int i = 0; i < targetLen; i++)
         {
             float t = tNew[i];
-            int idx = System.Array.FindLastIndex(tOrig, x => x <= t);
-            if (idx == tOrig.Length - 1) idx--;
-            float t0 = tOrig[idx], t1 = tOrig[idx + 1];
+            int idx = Array.FindLastIndex(tOrig, x => x <= t);
+            if (idx >= tOrig.Length - 1) idx = tOrig.Length - 2;
+
             Quaternion q0 = input[idx], q1 = input[idx + 1];
+            float t0 = tOrig[idx], t1 = tOrig[idx + 1];
             float lerpT = (t - t0) / (t1 - t0);
             result.Add(Quaternion.Slerp(q0, q1, lerpT));
         }
+
         return result;
     }
 
-    int ArgMax(float[] arr)
+    int ArgMax(float[] array)
     {
-        int maxIdx = 0;
-        float maxVal = arr[0];
-        for (int i = 1; i < arr.Length; i++)
+        int bestIndex = 0;
+        float bestValue = array[0];
+        for (int i = 1; i < array.Length; i++)
         {
-            if (arr[i] > maxVal)
+            if (array[i] > bestValue)
             {
-                maxVal = arr[i];
-                maxIdx = i;
+                bestValue = array[i];
+                bestIndex = i;
             }
         }
-        return maxIdx;
+        return bestIndex;
     }
 
     float[] Softmax(float[] logits)
     {
-        float maxLogit = logits.Max();
-        float sumExp = logits.Select(x => Mathf.Exp(x - maxLogit)).Sum();
-        return logits.Select(x => Mathf.Exp(x - maxLogit) / sumExp).ToArray();
+        float max = logits.Max();
+        float sum = logits.Select(v => Mathf.Exp(v - max)).Sum();
+        return logits.Select(v => Mathf.Exp(v - max) / sum).ToArray();
     }
 
-    //PRÓBA ZMIAN 
-    private float[,] LoadAndPreprocessCSV(string filePath)
+    void OnGesturePredicted(string label)
     {
-        float[,] result = new float[40, 7];
-
-        if (!File.Exists(filePath))
-        {
-            Debug.LogError("Nie znaleziono pliku CSV: " + filePath);
-            return result;
-        }
-
-        var lines = File.ReadAllLines(filePath).Take(40).ToList();
-
-        for (int i = 0; i < lines.Count; i++)
-        {
-            var parts = lines[i].Split(',');
-            if (parts.Length >= 7)
-            {
-                for (int j = 0; j < 7; j++)
-                {
-                    if (!float.TryParse(parts[j], out result[i, j]))
-                    {
-                        Debug.LogWarning($"Błąd parsowania CSV [line {i}, col {j}]: '{parts[j]}'");
-                        result[i, j] = 0f;
-                    }
-                }
-            }
-        }
-
-        return result;
+        if (label == "left")
+            dino.SendMessage("MoveLeft");
+        else if (label == "right")
+            dino.SendMessage("MoveRight");
+        else if (label == "up")
+            dino.SendMessage("Jump");
+        else if (label == "down")
+            dino.SendMessage("Bend");
+        else
+            Debug.LogWarning($"[UNKNOWN GESTURE] {label}");
     }
 
-
-    //PRÓBA ZMIAN +1
-
-
-    // Returns the predicted gesture label (e.g., "left", "right", "up", "down")
-    public string GetPredictedGesture()
+    // Prosta struktura na pojedynczą ramkę nagrania
+    public class GestureFrame
     {
-        // Load model
-        var model = ModelLoader.Load(onnxModelAsset);
-        using (var worker = WorkerFactory.CreateWorker(WorkerFactory.Type.Auto, model))
-        {
-            //ZMIANA float[,] data = LoadAndPreprocessCSV("sample_gesture.csv");
-            float[,] data = LoadAndPreprocessCSV(@"C:\Users\olivi\DinoGame3D\Assets\Resources\sample_gesture.csv");
-
-            Tensor inputTensor = new Tensor(1, 40, 7, 1);
-            for (int t = 0; t < 40; t++)
-                for (int f = 0; f < 7; f++)
-                    inputTensor[0, t, f, 0] = data[t, f];
-            worker.Execute(inputTensor);
-            Tensor output = worker.PeekOutput();
-            float[] outputArray = output.ToReadOnlyArray();
-            int predicted = ArgMax(outputArray);
-            string predictedLabel = (predicted >= 0 && predicted < classLabels.Length) ? classLabels[predicted] : $"class_{predicted}";
-            inputTensor.Dispose();
-            output.Dispose();
-            return predictedLabel;
-        }
-    }
-
-    // Wywoływana po rozpoznaniu gestu, tu podłącz logikę ruchu
-    protected virtual void OnGesturePredicted(string predictedLabel)
-    {
-        Debug.Log($"[ACTION] Wykonaj ruch: {predictedLabel}");
-        // Zakładamy, że w projekcie są już metody do sterowania dinozaurem,
-        // np. MoveLeft(), MoveRight(), MoveUp(), MoveDown() lub podobne.
-        // Wywołujemy odpowiednią metodę na podstawie predictedLabel:
-        switch (predictedLabel)
-        {
-            case "left":
-                SendMessage("MoveLeft", SendMessageOptions.DontRequireReceiver);
-                break;
-            case "right":
-                SendMessage("MoveRight", SendMessageOptions.DontRequireReceiver);
-                break;
-            case "up":
-                SendMessage("MoveUp", SendMessageOptions.DontRequireReceiver);
-                break;
-            case "down":
-                SendMessage("MoveDown", SendMessageOptions.DontRequireReceiver);
-                break;
-            default:
-                Debug.LogWarning($"[DINO] Nieznany ruch: {predictedLabel}");
-                break;
-        }
+        public int Id;
+        public float Time;
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public bool PrimaryButton;
+        public bool SecondaryButton;
+        public bool GripButton;
+        public bool TriggerButton;
     }
 }
